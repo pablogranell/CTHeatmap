@@ -24,7 +24,6 @@ class MapeoCompetencias:
         self.datos.columns = self.datos.columns.str.strip()
         self.datos = self.datos.apply(pd.to_numeric, errors='coerce').fillna(0)
         self._ordenar_por_curso()
-
         return True
     
     def _ordenar_por_curso(self):
@@ -41,20 +40,14 @@ class MapeoCompetencias:
         
         columnas_ordenadas = sorted(columnas, key=obtener_curso)
         self.matriz = self.datos[columnas_ordenadas]
-        
-        # Guardar información de cursos
-        self.asignaturas_info = pd.DataFrame({
-            'asignatura': columnas_ordenadas,
-            'curso': [obtener_curso(c) for c in columnas_ordenadas]
-        })
+        self.asignaturas_info = pd.DataFrame({'asignatura': columnas_ordenadas,
+                                              'curso': [obtener_curso(c) for c in columnas_ordenadas]})
     
     def generar_heatmap(self, guardar, mostrar, separadoresCurso, leyenda, archivo_salida):
         n_asignaturas = len(self.matriz.columns)
         n_competencias = len(self.matriz.index)
-        
         ancho = max(14, n_asignaturas * 0.6)
         alto = max(8, n_competencias * 0.4)
-        
         fig, ax = plt.subplots(figsize=(ancho, alto))
         
         cmap = sns.color_palette([
