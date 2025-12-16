@@ -96,63 +96,34 @@ class MapeoCompetencias:
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         fig.suptitle('Análisis de competencias\n', fontsize=16, fontweight='bold')
         
-        # 1. Frecuencia de evaluación por competencia
-        ax1 = axes[0, 0]
-        frecuencia_competencias = (self.matriz > 0).sum(axis=1).sort_values()
-        colores = ['#e34a33' if v == 0 else '#2166ac' if v < 3 else '#1a9850' 
-                  for v in frecuencia_competencias.values]
-        frecuencia_competencias.plot(kind='barh', ax=ax1, color=colores)
-        ax1.set_xlabel('Número de asignaturas que la trabajan')
-        ax1.set_title('Frecuencia de Trabajo por Competencia\n'
-                     '(Rojo=Nunca | Azul=Poco | Verde=Adecuado)', fontsize=11)
-        ax1.axvline(x=3, color='orange', linestyle='--', label='Mínimo recomendado')
+        # 1. Frecuencia por competencia
+        freq = (self.matriz > 0).sum(axis=1).sort_values()
+        colores = ['#e34a33' if v == 0 else '#2166ac' if v < 3 else '#1a9850' for v in freq]
+        freq.plot(kind='barh', ax=axes[0,0], color=colores)
+        axes[0,0].set(xlabel='Nº asignaturas', title='Frecuencia por Competencia\n(Rojo=Nunca | Azul=Poco | Verde=OK)')
+        axes[0,0].axvline(x=3, color='orange', linestyle='--') # Minimo recomendado
         
         # 2. Carga por asignatura
-        ax2 = axes[0, 1]
-        carga_asignaturas = self.matriz.sum(axis=0)
-        colores2 = plt.cm.RdYlGn([v/carga_asignaturas.max() for v in carga_asignaturas.values])
-        carga_asignaturas.plot(kind='bar', ax=ax2, color=colores2)
-        ax2.set_xlabel('Asignatura')
-        ax2.set_ylabel('Suma de niveles de competencias')
-        ax2.set_title('Carga de Competencias por Asignatura', fontsize=11)
-        ax2.tick_params(axis='x', rotation=45)
+        carga = self.matriz.sum(axis=0)
+        carga.plot(kind='bar', ax=axes[0,1], color=plt.cm.RdYlGn(carga/carga.max()))
+        axes[0,1].set(xlabel='Asignatura', ylabel='Suma niveles', title='Carga por Asignatura')
+        axes[0,1].tick_params(axis='x', rotation=45)
         
         # 3. Distribución de niveles
-        ax3 = axes[1, 0]
-        niveles = self.matriz.values.flatten()
-        niveles_conteo = pd.Series(niveles).value_counts().sort_index()
+        niveles = pd.Series(self.matriz.values.flatten()).value_counts().sort_index()
         colores3 = ['#f7f7f7', '#fee8c8', '#fdbb84', '#e34a33']
-        bars = niveles_conteo.plot(kind='bar', ax=ax3, 
-                                   color=[colores3[int(i)] for i in niveles_conteo.index],
-                                   edgecolor='black')
-        ax3.set_xlabel('Nivel')
-        ax3.set_ylabel('Frecuencia')
-        ax3.set_title('Distribución de Niveles de Trabajo', fontsize=11)
-        ax3.set_xticklabels(['No trabaja', 'Introducción', 'Desarrollo', 'Dominio'], 
-                           rotation=0)
+        niveles.plot(kind='bar', ax=axes[1,0], color=[colores3[int(i)] for i in niveles.index], edgecolor='black')
+        axes[1,0].set(xlabel='Nivel', ylabel='Frecuencia', title='Distribución de Niveles')
+        axes[1,0].set_xticklabels(['No trabaja', 'Introducción', 'Desarrollo', 'Dominio'], rotation=0)
         
         # 4. Evolución por curso
-        ax4 = axes[1, 1]
-        if self.asignaturas_info is not None:
-            cursos_unicos = sorted(self.asignaturas_info['curso'].unique())
-            evolucion = []
-            for curso in cursos_unicos:
-                asigs_curso = self.asignaturas_info[
-                    self.asignaturas_info['curso'] == curso
-                ]['asignatura'].tolist()
-                if asigs_curso:
-                    suma_curso = self.matriz[asigs_curso].sum().sum()
-                    evolucion.append({'Curso': f'{curso}º', 'Total': suma_curso})
-            
-            df_evolucion = pd.DataFrame(evolucion)
-            if not df_evolucion.empty:
-                df_evolucion.plot(x='Curso', y='Total', kind='line', 
-                                 marker='o', ax=ax4, linewidth=2, markersize=10,
-                                 color='#2166ac', legend=False)
-                ax4.fill_between(range(len(df_evolucion)), df_evolucion['Total'], 
-                                alpha=0.3, color='#2166ac')
-                ax4.set_ylabel('Suma total de niveles')
-                ax4.set_title('Intensidad de Competencias por Curso', fontsize=11)
+        evol = [{'Curso': f'{c}º', 'Total': self.matriz[self.asignaturas_info[self.asignaturas_info['curso']==c]['asignatura']].sum().sum()} 
+                for c in sorted(self.asignaturas_info['curso'].unique())]
+        df_evol = pd.DataFrame(evol)
+        df_evol.plot(x='Curso', y='Total', kind='line', marker='o', ax=axes[1,1], 
+                    linewidth=2, markersize=10, color='#2166ac', legend=False)
+        axes[1,1].fill_between(range(len(df_evol)), df_evol['Total'], alpha=0.3, color='#2166ac')
+        axes[1,1].set(ylabel='Suma total niveles', title='Intensidad por Curso')
         
         plt.tight_layout()
         
