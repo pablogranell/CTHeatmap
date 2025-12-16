@@ -137,7 +137,7 @@ class MapeoCompetencias:
 
 def main():
     # Verificar si existe el archivo de datos
-    archivo_datos = "ejemplo.xlsx"
+    archivo_datos = "ejemploReal.xlsx"
     
     if not Path(archivo_datos).exists():
         print("No se encontró excel.")
