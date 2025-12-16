@@ -107,7 +107,7 @@ class MapeoCompetencias:
         carga = self.matriz.sum(axis=0)
         carga.plot(kind='bar', ax=axes[0,1], color=plt.cm.RdYlGn(carga/carga.max()))
         axes[0,1].set(xlabel='Asignatura', ylabel='Suma niveles', title='Carga por Asignatura')
-        axes[0,1].tick_params(axis='x', rotation=45)
+        axes[0,1].set_xticklabels(axes[0,1].get_xticklabels(), rotation=45, ha='right', fontsize=8)
         
         # 3. Distribución de niveles
         niveles = pd.Series(self.matriz.values.flatten()).value_counts().sort_index()
