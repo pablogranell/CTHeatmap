@@ -19,17 +19,10 @@ class MapeoCompetencias:
     def cargar_datos(self, hoja):
         print(f"Cargando datos desde: {self.archivo}")
         
-        # Cargar la hoja principal de mapeo
         self.datos = pd.read_excel(self.archivo, sheet_name=hoja, index_col=0)
-        
-        # Limpiar nombres
         self.datos.index = self.datos.index.str.strip()
         self.datos.columns = self.datos.columns.str.strip()
-        
-        # Convertir a numérico (por si hay errores)
         self.datos = self.datos.apply(pd.to_numeric, errors='coerce').fillna(0)
-        
-        # Crear matriz ordenada por curso
         self._ordenar_por_curso()
 
         return True
@@ -37,7 +30,6 @@ class MapeoCompetencias:
     def _ordenar_por_curso(self):
         columnas = self.datos.columns.tolist()
         
-        # Extraer curso y ordenar
         def obtener_curso(nombre):
             partes = nombre.split('_')
             if len(partes) >= 1:
@@ -57,7 +49,6 @@ class MapeoCompetencias:
         })
     
     def generar_heatmap(self, guardar, mostrar, separadoresCurso, leyenda, archivo_salida):
-        # Configurar tamaño según cantidad de datos
         n_asignaturas = len(self.matriz.columns)
         n_competencias = len(self.matriz.index)
         
@@ -66,54 +57,39 @@ class MapeoCompetencias:
         
         fig, ax = plt.subplots(figsize=(ancho, alto))
         
-        # Crear heatmap
         cmap = sns.color_palette([
-            "#f7f7f7",  # 0 - Blanco (no trabaja)
-            "#fee8c8",  # 1 - Amarillo claro (introducción)
-            "#fdbb84",  # 2 - Naranja (desarrollo)
-            "#e34a33",  # 3 - Rojo (dominio)
+            "#f7f7f7",  # Blanco (no trabaja)
+            "#fee8c8",  # Amarillo claro (introducción)
+            "#fdbb84",  # Naranja (desarrollo)
+            "#e34a33",  # Rojo (dominio)
         ], as_cmap=True)
         
-        # Alternativa con degradado continuo
-        # cmap = sns.color_palette("YlOrRd", as_cmap=True)
-        
-        heatmap = sns.heatmap(
+        sns.heatmap(
             self.matriz,
             annot=True,  # Mostrar valores
             fmt='.0f',   # Sin decimales
-            cmap=cmap,
-            linewidths=0.5,
-            linecolor='white',
-            cbar_kws={
-                'label': 'Nivel de Trabajo',
-                'ticks': [0, 1, 2, 3],
-                'shrink': 0.8
-            },
-            vmin=0,
-            vmax=3,
-            ax=ax
+            cmap=cmap,linewidths=0.5,linecolor='white',
+            cbar_kws={'label': 'Nivel de Trabajo','ticks': [0, 1, 2, 3],'shrink': 0.8},
+            vmin=0,vmax=3,ax=ax
         )
 
-        # Personalizar ejes
         ax.set_xlabel('\nAsignaturas (ordenadas por curso)', fontsize=12, fontweight='bold')
         ax.set_ylabel('Competencias Transversales\n', fontsize=12, fontweight='bold')
-        
-        # Rotar etiquetas
         plt.xticks(rotation=45, ha='right', fontsize=9)
         plt.yticks(rotation=0, fontsize=9)
-        
-        # Título
         plt.title('Heatmap de competencias\n', fontsize=14, fontweight='bold', pad=20)
-
         plt.tight_layout()
 
-        # Añadir separadores de curso
         if separadoresCurso:
-            self.agregar_separadores_curso(ax)
+            cursos = self.asignaturas_info['curso'].values
+            for i in range(1, len(cursos)):
+                if cursos[i] != cursos[i-1]:
+                    ax.axvline(x=i, color='black', linewidth=2, linestyle='--', alpha=0.7)
         
-        # Leyenda de niveles
         if leyenda:
-            self.agregar_leyenda(fig)
+            leyenda_texto = ("Niveles: 0=No trabaja | 1=Introducción | 2=Desarrollo | 3=Dominio")
+            fig.text(0.5, -0.02, leyenda_texto, ha='center', fontsize=10, 
+                    style='italic', transform=fig.transFigure)
         
         if guardar:
             plt.savefig(archivo_salida, dpi=300, bbox_inches='tight', facecolor='white', edgecolor='none')
@@ -122,18 +98,7 @@ class MapeoCompetencias:
             plt.show()
         
         plt.close()
-    
-    def agregar_separadores_curso(self, ax):
-        cursos = self.asignaturas_info['curso'].values
-        for i in range(1, len(cursos)):
-            if cursos[i] != cursos[i-1]:
-                ax.axvline(x=i, color='black', linewidth=2, linestyle='--', alpha=0.7)
-    
-    def agregar_leyenda(self, fig):
-        leyenda_texto = ("Niveles: 0=No trabaja | 1=Introducción | 2=Desarrollo | 3=Dominio")
-        fig.text(0.5, -0.02, leyenda_texto, ha='center', fontsize=10, 
-                style='italic', transform=fig.transFigure)
-    
+
     def generar_estadisticas(self, guardar, mostrar, archivo_salida):
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         fig.suptitle('Análisis de competencias\n', fontsize=16, fontweight='bold')
